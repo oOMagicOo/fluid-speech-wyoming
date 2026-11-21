@@ -154,7 +154,13 @@ async def main() -> None:
         "--record-retention-days",
         type=int,
         default=env_int("RECORD_RETENTION_DAYS", 0),
-        help="Delete recordings older than N days (0 keeps them forever)",
+        help="Delete recordings older than N days (0 disables this rule)",
+    )
+    parser.add_argument(
+        "--record-retention-count",
+        type=int,
+        default=env_int("RECORD_RETENTION_COUNT", 20),
+        help="Keep only the newest N utterances, with their transcripts (0 disables)",
     )
 
     parser.add_argument("--debug", action="store_true", default=env_bool("FLUID_DEBUG", False))
@@ -181,6 +187,8 @@ async def main() -> None:
         recorder.directory = Path(args.record_dir)
     if args.record_retention_days is not None:
         recorder.retention_days = max(0, args.record_retention_days)
+    if args.record_retention_count is not None:
+        recorder.retention_count = max(0, args.record_retention_count)
 
     wyoming_info = _build_info(args.model, languages)
     model_lock = asyncio.Lock()

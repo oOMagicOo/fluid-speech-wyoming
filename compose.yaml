@@ -16,7 +16,8 @@ services:
       RECORD_ENABLED: "true"
       RECORD_DIR: /recordings
       RECORD_SUBDIRS_BY_DATE: "true"
-      RECORD_RETENTION_DAYS: "0"    # 0 = keep forever
+      RECORD_RETENTION_COUNT: "20"  # keep last 20 utterances (+ their .txt); 0 = unlimited
+      RECORD_RETENTION_DAYS: "0"    # optional age limit in days; 0 = off
       RECORD_METADATA: "true"
       # RECORD_FILENAME: "{utc:%Y%m%dT%H%M%S.%fZ}_{satellite}_{shortid}"
       FLUID_DEBUG: "false"

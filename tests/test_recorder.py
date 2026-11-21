@@ -106,5 +106,36 @@ class RecorderTests(unittest.TestCase):
         self.assertTrue(wav_target.name.startswith("de_echo_"))
 
 
+    def test_retention_count_keeps_newest_utterances(self) -> None:
+        out = self.root / "out"
+        out.mkdir()
+        now = time.time()
+        for index in range(1, 5):
+            wav = out / f"old{index}.wav"
+            txt = out / f"old{index}.txt"
+            wav.write_bytes(self.wav_bytes)
+            txt.write_text(f"old {index}", encoding="utf-8")
+            stamp = now - (5 - index) * 3600
+            os.utime(wav, (stamp, stamp))
+            os.utime(txt, (stamp, stamp))
+
+        recorder = Recorder(
+            enabled=True,
+            directory=out,
+            subdirs_by_date=False,
+            retention_count=2,
+        )
+        result = recorder.save(self.source, text="new utterance")
+        self.assertIsNotNone(result)
+        wavs = sorted(p.name for p in out.glob("*.wav"))
+        txts = sorted(p.name for p in out.glob("*.txt"))
+        self.assertEqual(len(wavs), 2, wavs)
+        self.assertEqual(len(txts), 2, txts)
+        self.assertIn("old4.wav", wavs)
+        self.assertNotIn("old1.wav", wavs)
+        self.assertNotIn("old1.txt", txts)
+        self.assertIn(result[0].name, wavs)
+
+
 if __name__ == "__main__":
     unittest.main()

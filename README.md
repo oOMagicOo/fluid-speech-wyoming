@@ -36,7 +36,8 @@ Alle Optionen sind Umgebungsvariablen in `compose.yaml`:
 | `RECORD_DIR` | `/recordings` | Zielverzeichnis im Container |
 | `RECORD_FILENAME` | `{utc:%Y%m%dT%H%M%S.%fZ}_{satellite}_{shortid}` | Dateiname ohne Endung; `utc`, `date`, `satellite`, `conversation`, `shortid`, `language` verfügbar |
 | `RECORD_SUBDIRS_BY_DATE` | `true` | Tagesordner `YYYY-MM-DD/` anlegen |
-| `RECORD_RETENTION_DAYS` | `0` | Löschen alter Aufnahmen (0 = nie löschen) |
+| `RECORD_RETENTION_COUNT` | `20` | **Anzahl** der behaltenen Äußerungen (WAV + TXT); 0 = unbegrenzt |
+| `RECORD_RETENTION_DAYS` | `0` | Optionales Alter in Tagen; 0 = aus. Beide Regeln können kombiniert werden |
 | `RECORD_METADATA` | `true` | `.txt` neben der WAV schreiben |
 
 **Wichtig:** Wyoming überträgt keine WAV-Dateien, sondern rohe PCM-Chunks. Der Container fügt sie zu einer WAV zusammen und speichert genau diese. Die Textdatei enthält unter anderem:

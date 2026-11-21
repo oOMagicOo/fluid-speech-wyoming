@@ -76,6 +76,7 @@ class Recorder:
         filename_template: str = DEFAULT_FILENAME,
         subdirs_by_date: bool = True,
         retention_days: int = 0,
+        retention_count: int = 20,
         metadata: bool = True,
         model_name: str = "",
         quantization: str = "",
@@ -85,6 +86,7 @@ class Recorder:
         self.filename_template = filename_template or DEFAULT_FILENAME
         self.subdirs_by_date = subdirs_by_date
         self.retention_days = max(0, retention_days)
+        self.retention_count = max(0, retention_count)
         self.metadata = metadata
         self.model_name = model_name
         self.quantization = quantization
@@ -98,6 +100,7 @@ class Recorder:
             filename_template=os.environ.get("RECORD_FILENAME", DEFAULT_FILENAME),
             subdirs_by_date=env_bool("RECORD_SUBDIRS_BY_DATE", True),
             retention_days=env_int("RECORD_RETENTION_DAYS", 0),
+            retention_count=env_int("RECORD_RETENTION_COUNT", 20),
             metadata=env_bool("RECORD_METADATA", True),
             model_name=model_name,
             quantization=quantization,
@@ -166,7 +169,7 @@ class Recorder:
                 self._atomic_text(txt_target, "\n".join(contents) + "\n")
 
             _LOGGER.info("Recorded utterance: %s", wav_target)
-            if self.retention_days:
+            if self.retention_days or self.retention_count:
                 self._cleanup(now)
             return wav_target, txt_target if self.metadata else None
         except OSError:
@@ -200,20 +203,53 @@ class Recorder:
                 tmp.unlink()
 
     def _cleanup(self, now: datetime) -> None:
-        """Delete old WAV/TXT recordings. Retention of 0 means keep forever."""
-        cutoff = (now - timedelta(days=self.retention_days)).timestamp()
-        removed = 0
+        """Apply retention: by age (days) and/or by number of utterances.
+
+        The count limit keeps the newest N WAV files across all date folders
+        and removes each one's transcript beside it.  A limit of 0 disables
+        that rule; both rules can be active at the same time.
+        """
+        removed: set[Path] = set()
         try:
+            files: list[tuple[float, Path]] = []
             for path in self.directory.rglob("*"):
                 if not path.is_file() or path.suffix not in (".wav", ".txt"):
                     continue
                 try:
-                    if path.stat().st_mtime < cutoff:
-                        path.unlink()
-                        removed += 1
+                    files.append((path.stat().st_mtime, path))
                 except OSError:  # pragma: no cover - concurrent deletion
                     continue
-            for path in sorted(self.directory.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+
+            if self.retention_days:
+                cutoff = (now - timedelta(days=self.retention_days)).timestamp()
+                for mtime, path in files:
+                    if mtime < cutoff:
+                        removed.add(path)
+
+            if self.retention_count:
+                wavs = sorted(
+                    ((mtime, path) for mtime, path in files if path.suffix == ".wav"),
+                    key=lambda item: (item[0], str(item[1])),
+                    reverse=True,
+                )
+                expired = wavs[self.retention_count:]
+                kept_stems = {path.stem for _, path in wavs[:self.retention_count]}
+                for _, path in expired:
+                    removed.add(path)
+                    removed.add(path.with_suffix(".txt"))
+                for _, path in files:
+                    if path.suffix == ".txt" and path.stem not in kept_stems:
+                        removed.add(path)
+
+            for path in removed:
+                try:
+                    path.unlink()
+                except OSError:  # pragma: no cover - already gone
+                    continue
+
+            for path in sorted(
+                self.directory.rglob("*"), key=lambda p: len(p.parts), reverse=True
+            ):
                 if path.is_dir():
                     try:
                         path.rmdir()  # only succeeds when empty
@@ -223,4 +259,4 @@ class Recorder:
             _LOGGER.debug("Retention cleanup skipped", exc_info=True)
             return
         if removed:
-            _LOGGER.info("Removed %d old recording(s)", removed)
+            _LOGGER.info("Retention removed %d file(s)", len(removed))
