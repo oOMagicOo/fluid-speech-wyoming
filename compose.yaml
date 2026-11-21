@@ -1,0 +1,22 @@
+services:
+  fluid-speech:
+    image: ghcr.io/oomagicoo/fluid-speech-wyoming:latest
+    container_name: fluid-speech-wyoming
+    restart: unless-stopped
+    ports:
+      - "10301:10301"
+    volumes:
+      - ./models:/data          # ONNX model cache (~801 MB int8 on first start)
+      - ./recordings:/recordings # WAV + transcript files
+    environment:
+      FLUID_URI: tcp://0.0.0.0:10301
+      FLUID_MODEL: FluidVoice-Labs/fluid-speech-pro-onnx
+      FLUID_QUANTIZATION: int8      # int8 | fp32; set FLUID_CLEAN_MODE=true for clean.int8
+      FLUID_LANGUAGES: bg,cs,da,de,el,en,es,et,fi,fr,hr,hu,it,lt,lv,mt,nl,pl,pt,ro,ru,sk,sl,sv,uk
+      RECORD_ENABLED: "true"
+      RECORD_DIR: /recordings
+      RECORD_SUBDIRS_BY_DATE: "true"
+      RECORD_RETENTION_DAYS: "0"    # 0 = keep forever
+      RECORD_METADATA: "true"
+      # RECORD_FILENAME: "{utc:%Y%m%dT%H%M%S.%fZ}_{satellite}_{shortid}"
+      FLUID_DEBUG: "false"

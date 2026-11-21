@@ -1,0 +1,13 @@
+This project includes code derived from wyoming-onnx-asr
+(https://github.com/tboby/wyoming-onnx-asr), Copyright (c) 2025 Thomas Boby,
+licensed under the MIT License. See LICENSE.
+
+The speech recognition model is not included in this repository. It is:
+
+    Fluid Speech Pro by FluidVoice
+    https://huggingface.co/FluidVoice-Labs/fluid-speech-pro
+    Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+Fluid Speech Pro is built on NVIDIA Parakeet TDT 0.6B v3 and Moondream
+Parakeet Ultra, both CC BY 4.0. Please credit "Fluid Speech Pro by FluidVoice"
+when using the model; every generated transcript file contains this credit.

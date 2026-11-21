@@ -1,0 +1,24 @@
+[project]
+name = "fluid-speech-wyoming"
+version = "0.6.1"
+description = "Wyoming STT server for Fluid Speech Pro with configurable WAV/transcript recording"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { text = "MIT" }
+dependencies = [
+  "wyoming>=1.5.3",
+  "onnx-asr[cpu,hub]==0.12.0",
+  "soundfile>=0.12.1",
+  "numpy>=1.24",
+]
+
+[project.scripts]
+fluid-speech-wyoming = "wyoming_onnx_asr.__main__:run"
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["wyoming_onnx_asr"]
+exclude = ["tests"]
